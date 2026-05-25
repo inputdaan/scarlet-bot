@@ -67,7 +67,7 @@ class BoasVindas(commands.Cog):
         embed = discord.Embed(
             title=template_escolhido["titulo"], 
             description=descricao_formatada,
-            color=discord.Color.blurple()
+            color=discord.Color.from_str("#BBEDEE")
         )
 
         if template_escolhido["banner"]:
@@ -102,7 +102,7 @@ class BoasVindas(commands.Cog):
         embed = discord.Embed(
             title=f"🧪 [TESTE] {template_escolhido['titulo']}", 
             description=descricao_formatada,
-            color=discord.Color.blurple()
+            color=discord.Color.from_str("#BBEDEE")
         )
 
         if template_escolhido["banner"]:
