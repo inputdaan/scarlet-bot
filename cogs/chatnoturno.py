@@ -11,9 +11,9 @@ HORARIO_ABRIR = datetime.time(hour=21, minute=0, second=0, tzinfo=UTC_MENOS_TRES
 HORARIO_AVISO_FECHAR = datetime.time(hour=5, minute=30, second=0, tzinfo=UTC_MENOS_TRES) # <-- 30 min antes de fechar
 HORARIO_FECHAR = datetime.time(hour=6, minute=0, second=0, tzinfo=UTC_MENOS_TRES)
 
-# CONFIGURAÇÃO DE IDS (Altere com os IDs reais do seu servidor)
+# CONFIGURAÇÃO DE IDS
 ID_CANAL_NOTURNO = 1505414356479774720  # ID do seu chat madruga
-ID_CANAL_GERAL = 1489820240576774307    # <-- SUBSTITUA PELO ID REAL DO SEU CHAT GERAL
+ID_CANAL_GERAL = 1489820240576774307    # ID do seu chat geral atualizado
 
 class ChatNoturno(commands.Cog):
     def __init__(self, bot):
@@ -54,14 +54,17 @@ class ChatNoturno(commands.Cog):
             await canal.send(embed=embed)
             print("O chat noturno foi aberto e tornado visível automaticamente.")
             
-            # Envia o aviso lá no chat geral
+            # Envia o aviso lá no chat geral com o texto customizado fora da embed
             if general:
                 embed_geral = discord.Embed(
                     title="<:kannapog:1503187985779265709> **MADRUGA LIBERADA!**",
                     description=f"O canal {canal.mention} acabou de ser aberto! Corre lá para jogar conversa fora.",
                     color=discord.Color.green()
                 )
-                await general.send(embed=embed_geral)
+                
+                # 💡 Mensagem fora da embed mencionando o canal e aplicando os mesmos emojis nas pontas
+                texto_fora = f"<:kannapog:1503187985779265709> {canal.mention} <:kannapog:1503187985779265709> **A noite chegou e o chat noturno está no ar!**"
+                await general.send(content=texto_fora, embed=embed_geral)
 
     # Rotina que roda todo dia às 05:30 (Aviso prévio)
     @tasks.loop(time=HORARIO_AVISO_FECHAR)
@@ -128,14 +131,17 @@ O que acontece de madrugada fica de madrugada.""",
         await canal.send(embed=embed)
         await interaction.response.send_message("✅ O canal foi aberto e tornado visível!", ephemeral=True)
         
-        # Envia o aviso lá no chat geral indicando abertura manual
+        # Envia o aviso lá no chat geral indicando abertura manual com o novo padrão de texto
         if general:
             embed_geral = discord.Embed(
                 title="<:kannapog:1503187985779265709> **MADRUGA LIBERADA MAIS CEDO!**",
                 description=f"O canal {canal.mention} foi aberto antecipadamente por {interaction.user.mention}!",
                 color=discord.Color.green()
             )
-            await general.send(embed=embed_geral)
+            
+            # 💡 Altera o aviso manual no geral também
+            texto_fora_manual = f"<:kannapog:1503187985779265709> {canal.mention} <:kannapog:1503187985779265709> **O chat noturno foi aberto manualmente!**"
+            await general.send(content=texto_fora_manual, embed=embed_geral)
 
     # Comando para fechar manualmente
     @app_commands.command(name="noturno_fechar", description="Fecha e oculta o chat noturno manualmente.")
