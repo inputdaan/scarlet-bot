@@ -11,8 +11,9 @@ HORARIO_ABRIR = datetime.time(hour=21, minute=0, second=0, tzinfo=UTC_MENOS_TRES
 HORARIO_AVISO_FECHAR = datetime.time(hour=5, minute=30, second=0, tzinfo=UTC_MENOS_TRES) # <-- 30 min antes de fechar
 HORARIO_FECHAR = datetime.time(hour=6, minute=0, second=0, tzinfo=UTC_MENOS_TRES)
 
-# CONFIGURAÇÃO DE ID (Altere com o ID do seu servidor)
-ID_CANAL_NOTURNO = 1505414356479774720  # ID real do seu chat noturno
+# CONFIGURAÇÃO DE IDS (Altere com os IDs reais do seu servidor)
+ID_CANAL_NOTURNO = 1505414356479774720  # ID do seu chat madruga
+ID_CANAL_GERAL = 1489820240576774307    # <-- SUBSTITUA PELO ID REAL DO SEU CHAT GERAL
 
 class ChatNoturno(commands.Cog):
     def __init__(self, bot):
@@ -37,6 +38,7 @@ class ChatNoturno(commands.Cog):
     @tasks.loop(time=HORARIO_ABRIR)
     async def rotina_abrir(self):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
+        general = self.bot.get_channel(ID_CANAL_GERAL)
         
         if canal:
             everyone = canal.guild.default_role
@@ -51,6 +53,15 @@ class ChatNoturno(commands.Cog):
             )
             await canal.send(embed=embed)
             print("O chat noturno foi aberto e tornado visível automaticamente.")
+            
+            # Envia o aviso lá no chat geral
+            if general:
+                embed_geral = discord.Embed(
+                    title="<:kannapog:1503187985779265709> **MADRUGA LIBERADA!**",
+                    description=f"O canal {canal.mention} acabou de ser aberto! Corre lá para jogar conversa fora.",
+                    color=discord.Color.green()
+                )
+                await general.send(embed=embed_geral)
 
     # Rotina que roda todo dia às 05:30 (Aviso prévio)
     @tasks.loop(time=HORARIO_AVISO_FECHAR)
@@ -100,6 +111,8 @@ O que acontece de madrugada fica de madrugada.""",
     @app_commands.checks.has_permissions(manage_channels=True)
     async def abrir_manual(self, interaction: discord.Interaction):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
+        general = self.bot.get_channel(ID_CANAL_GERAL)
+        
         if not canal:
             await interaction.response.send_message("❌ Canal não encontrado. Verifique o ID configurado.", ephemeral=True)
             return
@@ -114,6 +127,15 @@ O que acontece de madrugada fica de madrugada.""",
         )
         await canal.send(embed=embed)
         await interaction.response.send_message("✅ O canal foi aberto e tornado visível!", ephemeral=True)
+        
+        # Envia o aviso lá no chat geral indicando abertura manual
+        if general:
+            embed_geral = discord.Embed(
+                title="<:kannapog:1503187985779265709> **MADRUGA LIBERADA MAIS CEDO!**",
+                description=f"O canal {canal.mention} foi aberto antecipadamente por {interaction.user.mention}!",
+                color=discord.Color.green()
+            )
+            await general.send(embed=embed_geral)
 
     # Comando para fechar manualmente
     @app_commands.command(name="noturno_fechar", description="Fecha e oculta o chat noturno manualmente.")
