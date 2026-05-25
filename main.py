@@ -25,8 +25,15 @@ class MyBot(commands.Bot):
             print("Cog do Chat Noturno carregada com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao carregar a Cog do Chat Noturno: {e}")
+            
+        # CARREGA O SISTEMA DE BOAS-VINDAS ALEATÓRIO
+        try:
+            await self.load_extension('cogs.boasvindas')
+            print("Cog de Boas-Vindas carregada com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao carregar a Cog de Boas-Vindas: {e}")
         
-        # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno)
+        # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno e boas-vindas)
         try:
             synced = await self.tree.sync()
             print(f"🔄 Comandos Slash sincronizados globalmente! Total: {len(synced)} comandos.")
