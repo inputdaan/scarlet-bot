@@ -33,6 +33,13 @@ class MyBot(commands.Bot):
         except Exception as e:
             print(f"❌ Erro ao carregar a Cog de Boas-Vindas: {e}")
         
+        # CARREGA O SISTEMA DE NOTÍCIAS GEEK E ANIMES
+        try:
+            await self.load_extension('cogs.noticias')
+            print("Cog de Notícias Geek carregada com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao carregar a Cog de Notícias Geek: {e}")
+        
         # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno e boas-vindas)
         try:
             synced = await self.tree.sync()
