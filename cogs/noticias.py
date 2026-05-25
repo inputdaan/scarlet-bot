@@ -90,7 +90,11 @@ class NoticiasGeek(commands.Cog):
 
                     embed.set_footer(text=f"Via {portal} • Atualizado")
                     
-                    await canal.send(embed=embed)
+                    # 💡 Define o nome da fonte em texto baseado no portal atual
+                    fonte_texto = "Crunchyroll Noticias" if portal == "Crunchyroll" else "IGN Brasil"
+                    
+                    # Envia a mensagem com o texto da fonte fora da embed
+                    await canal.send(content=f"📰 **{fonte_texto}**", embed=embed)
 
             except Exception as e:
                 print(f"❌ Erro ao puxar {portal}: {e}")
@@ -193,8 +197,8 @@ class NoticiasGeek(commands.Cog):
 
             embed.set_footer(text="Teste Manual • Via IGN Brasil")
 
-            # Manda direto no canal de notícias principal do servidor
-            await canal.send(embed=embed)
+            # 💡 Como o teste usa o feed da IGN por padrão, definimos o texto fixo do teste aqui
+            await canal.send(content="📰 **IGN Brasil**", embed=embed)
             await interaction.followup.send("✅ O embed de teste foi gerado e enviado com sucesso no canal de notícias!", ephemeral=True)
 
         except Exception as e:
