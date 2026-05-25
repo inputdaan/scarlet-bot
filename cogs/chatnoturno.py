@@ -19,8 +19,11 @@ class ChatNoturno(commands.Cog):
         self.bot = bot
         # Inicia as rotinas automáticas em segundo plano
         self.rotina_abrir.start()
-        self.rotina_aviso_fechar.start() # <-- Inicia a nova rotina de aviso
+        self.rotina_aviso_fechar.start()
         self.rotina_fechar.start()
+        
+        # Log de inicialização no console
+        print("🟢 [COG] Sistema do Chat Noturno carregado com sucesso!")
 
     def cog_unload(self):
         # Para as rotinas caso a cog seja recarregada
@@ -30,14 +33,15 @@ class ChatNoturno(commands.Cog):
 
     # ==================== ROTINAS AUTOMÁTICAS ====================
 
-    # Rotina que roda todo dia às 21:00
+    # Rotina que roda todo dia às 21:00 (Abre e Torna Visível)
     @tasks.loop(time=HORARIO_ABRIR)
     async def rotina_abrir(self):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
         
         if canal:
             everyone = canal.guild.default_role
-            await canal.set_permissions(everyone, send_messages=True, read_message_history=True)
+            # Define para VER o canal e ENVIAR mensagens
+            await canal.set_permissions(everyone, view_channel=True, send_messages=True, read_message_history=True)
             
             embed = discord.Embed(
                 title="<:kannapog:1503187985779265709> **CHAT BAGUNÇA DA MADRUGA ABERTO** <:kannapog:1503187985779265709> ",
@@ -46,7 +50,7 @@ class ChatNoturno(commands.Cog):
                 color=discord.Color.green()
             )
             await canal.send(embed=embed)
-            print("O chat noturno foi aberto automaticamente pelo sistema.")
+            print("O chat noturno foi aberto e tornado visível automaticamente.")
 
     # Rotina que roda todo dia às 05:30 (Aviso prévio)
     @tasks.loop(time=HORARIO_AVISO_FECHAR)
@@ -58,20 +62,18 @@ class ChatNoturno(commands.Cog):
                 title="<:emoji_33:1503190692099260492> **AVISO: O CHAT FECHA EM 30 MINUTOS** <:emoji_33:1503190692099260492>",
                 description="""<a:1n_b_seta:1502812597043593419> O chat madruga será encerrado às **06:00 AM**!
 Aproveitem os últimos minutos, pois o que acontece de madrugada fica de madrugada.""",
-                color=discord.Color.gold() # Cor amarela/laranja para indicar aviso
+                color=discord.Color.gold()
             )
             await canal.send(embed=embed)
             print("Aviso de fechamento do chat noturno enviado.")
 
-    # Rotina que roda todo dia às 06:00 da manhã
+    # Rotina que roda todo dia às 06:00 da manhã (Fecha e Oculta)
     @tasks.loop(time=HORARIO_FECHAR)
     async def rotina_fechar(self):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
         
         if canal:
-            everyone = canal.guild.default_role
-            await canal.set_permissions(everyone, send_messages=False)
-            
+            # Envia o embed avisando antes de sumir com o canal
             embed = discord.Embed(
                 title="<:emoji_33:1503190692099260492> **CHAT ENCERRADO** <:emoji_33:1503190692099260492>",
                 description="""<a:1n_b_seta:1502812597043593419> O chat fechou e abrirá novamente amanhã as 21:00!
@@ -79,7 +81,11 @@ O que acontece de madrugada fica de madrugada.""",
                 color=discord.Color.red()
             )
             await canal.send(embed=embed)
-            print("O chat noturno foi fechado automaticamente pelo sistema.")
+            
+            everyone = canal.guild.default_role
+            # Modifica para NÃO ver o canal e NÃO enviar mensagens
+            await canal.set_permissions(everyone, view_channel=False, send_messages=False)
+            print("O chat noturno foi fechado e ocultado automaticamente.")
 
     @rotina_abrir.before_loop
     @rotina_aviso_fechar.before_loop
@@ -90,7 +96,7 @@ O que acontece de madrugada fica de madrugada.""",
     # ==================== COMANDOS MANUAIS ====================
 
     # Comando para abrir manualmente
-    @app_commands.command(name="noturno_abrir", description="Abre o chat noturno manualmente antes do horário padrão.")
+    @app_commands.command(name="noturno_abrir", description="Abre e torna visível o chat noturno manualmente.")
     @app_commands.checks.has_permissions(manage_channels=True)
     async def abrir_manual(self, interaction: discord.Interaction):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
@@ -99,18 +105,18 @@ O que acontece de madrugada fica de madrugada.""",
             return
 
         everyone = canal.guild.default_role
-        await canal.set_permissions(everyone, send_messages=True, read_message_history=True)
+        await canal.set_permissions(everyone, view_channel=True, send_messages=True, read_message_history=True)
         
         embed = discord.Embed(
             title="🔓 Chat Liberado Manualmente!",
-            description=f"O chat noturno foi aberto mais cedo por {interaction.user.mention}.",
+            description=f"O chat noturno foi aberto e tornado visível mais cedo por {interaction.user.mention}.",
             color=discord.Color.green()
         )
         await canal.send(embed=embed)
-        await interaction.response.send_message("✅ O canal foi aberto com sucesso!", ephemeral=True)
+        await interaction.response.send_message("✅ O canal foi aberto e tornado visível!", ephemeral=True)
 
     # Comando para fechar manualmente
-    @app_commands.command(name="noturno_fechar", description="Fecha o chat noturno manualmente antes do horário padrão.")
+    @app_commands.command(name="noturno_fechar", description="Fecha e oculta o chat noturno manualmente.")
     @app_commands.checks.has_permissions(manage_channels=True)
     async def fechar_manual(self, interaction: discord.Interaction):
         canal = self.bot.get_channel(ID_CANAL_NOTURNO)
@@ -118,18 +124,18 @@ O que acontece de madrugada fica de madrugada.""",
             await interaction.response.send_message("❌ Canal não encontrado. Verifique o ID configurado.", ephemeral=True)
             return
 
-        everyone = canal.guild.default_role
-        await canal.set_permissions(everyone, send_messages=False)
-        
         embed = discord.Embed(
             title="🔒 Chat Fechado Manualmente!",
-            description=f"O chat noturno foi fechado antecipadamente por {interaction.user.mention}.",
+            description=f"O chat noturno foi fechado e ocultado antecipadamente por {interaction.user.mention}.",
             color=discord.Color.red()
         )
         await canal.send(embed=embed)
-        await interaction.response.send_message("✅ O canal foi fechado com sucesso!", ephemeral=True)
 
-    # Trata o erro caso alguém sem a permissão tente burlar ou usar o comando
+        everyone = canal.guild.default_role
+        await canal.set_permissions(everyone, view_channel=False, send_messages=False)
+        await interaction.response.send_message("✅ O canal foi fechado e ocultado com sucesso!", ephemeral=True)
+
+    # Trata o erro caso alguém sem a permissão tente usar o comando
     @abrir_manual.error
     @fechar_manual.error
     async def comandos_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
