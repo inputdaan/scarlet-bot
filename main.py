@@ -19,9 +19,19 @@ class MyBot(commands.Bot):
         await self.load_extension('cogs.tickets')
         print("Cog de Tickets carregado com sucesso!")
         
-        # Sincroniza os comandos com o Discord
-        await self.tree.sync()
-        print("Comandos Slash sincronizados globalmente!")
+        # CARREGA O CHAT NOTURNO: Ativa o novo sistema que criamos
+        try:
+            await self.load_extension('cogs.chatnoturno')
+            print("Cog do Chat Noturno carregada com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao carregar a Cog do Chat Noturno: {e}")
+        
+        # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno)
+        try:
+            synced = await self.tree.sync()
+            print(f"🔄 Comandos Slash sincronizados globalmente! Total: {len(synced)} comandos.")
+        except Exception as e:
+            print(f"❌ Erro ao sincronizar comandos na árvore do Discord: {e}")
 
     async def on_ready(self):
         print(f'Bot logado com sucesso como {self.user.name}')
