@@ -3,13 +3,16 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import feedparser
 import datetime
-from datetime import time
 
 # =========================================================================
 #                         CONFIGURAÇÕES DO SISTEMA
 # =========================================================================
 ID_CANAL_NOTICIAS = 1508516714181296219  # ID do seu canal de notícias geek
 ID_CARGO_ANIMES = 1489820094518530049    # ID do cargo para o ping das 12:00
+
+# Define o fuso horário de Brasília (UTC-3) para corrigir o envio das 9h
+UTC_MENOS_TRES = datetime.timezone(datetime.timedelta(hours=-3))
+HORARIO_GIRO = datetime.time(hour=12, minute=0, second=0, tzinfo=UTC_MENOS_TRES)
 
 # Fontes RSS em Português
 FONTES_RSS = {
@@ -59,25 +62,28 @@ class NoticiasGeek(commands.Cog):
                             self.noticias_enviadas.add(f.entries[0].link)
                     return
 
-                # Se a notícia for inédita, monta o Embed Laranja estilo Readybot
+                # Se a notícia for inédita, monta o Embed Laranja
                 if link not in self.noticias_enviadas:
                     self.noticias_enviadas.add(link)
 
                     autor = noticia.get('author', portal)
                     titulo = noticia.title
                     
+                    # Tenta buscar 'summary' e, se não achar (caso da IGN), busca 'description'
+                    resumo_bruto = noticia.get('summary', noticia.get('description', 'Clique no link para ler a matéria completa.'))
+                    
                     # Limpa tags HTML simples que costumam vir no resumo
-                    resumo = noticia.get('summary', 'Clique no link para ler a matéria completa.').split('<')[0]
+                    resumo = resumo_bruto.split('<')[0].strip()
                     if len(resumo) > 250:
                         resumo = resumo[:247] + "..."
 
-                    # Criação do Embed Laranja
+                    # Criação do Embed Laranja Vibrante Geek
                     embed = discord.Embed(
                         title=titulo,
                         url=link,
                         description=resumo,
-                        color=discord.Color.from_str("#FF4500"), # Laranja Vibrante Geek
-                        timestamp=datetime.datetime.now()
+                        color=discord.Color.from_str("#FF4500"), # 🟠 Mantido o Laranja aqui
+                        timestamp=datetime.datetime.now(UTC_MENOS_TRES)
                     )
                     
                     embed.set_author(name=autor)
@@ -90,7 +96,7 @@ class NoticiasGeek(commands.Cog):
 
                     embed.set_footer(text=f"Via {portal} • Atualizado")
                     
-                    # 💡 Define o nome da fonte em texto baseado no portal atual
+                    # Define o nome da fonte em texto baseado no portal atual
                     fonte_texto = "Crunchyroll Noticias" if portal == "Crunchyroll" else "IGN Brasil"
                     
                     # Envia a mensagem com o texto da fonte fora da embed
@@ -100,9 +106,9 @@ class NoticiasGeek(commands.Cog):
                 print(f"❌ Erro ao puxar {portal}: {e}")
 
     # =========================================================================
-    # 2. GIRO GEEK ESPECIAL (TODOS OS DIAS ÀS 12:00)
+    # 2. GIRO GEEK ESPECIAL (TODOS OS DIAS ÀS 12:00 HORÁRIO DE BRASÍLIA)
     # =========================================================================
-    @tasks.loop(time=time(hour=12, minute=0))
+    @tasks.loop(time=HORARIO_GIRO)
     async def giro_meio_dia(self):
         await self.bot.wait_until_ready()
         canal = self.bot.get_channel(ID_CANAL_NOTICIAS)
@@ -129,7 +135,7 @@ class NoticiasGeek(commands.Cog):
             title="🔥 NOTICIA GEEK DO DIA ESTÁ NO AR 🔥",
             description="Fique por dentro dos acontecimentos mais importantes sobre Animes, Mangás, Games e Cultura Pop de hoje!\n\n━━━━━━━ ● ━━━━━━━",
             color=discord.Color.from_str("#FF3300"),
-            timestamp=datetime.datetime.now()
+            timestamp=datetime.datetime.now(UTC_MENOS_TRES)
         )
 
         for idx, (portal, item) in enumerate(noticias_principais[:3], start=1):
@@ -157,7 +163,6 @@ class NoticiasGeek(commands.Cog):
     @app_commands.command(name="testar_noticia", description="Força o envio da notícia mais recente da IGN para testar a formatação do embed laranja.")
     @app_commands.checks.has_permissions(manage_channels=True, manage_roles=True)
     async def testar_noticia(self, interaction: discord.Interaction):
-        # Resposta temporária visível apenas para o autor do comando
         await interaction.response.send_message("🔄 Conectando aos portais e gerando embed laranja de teste...", ephemeral=True)
         
         canal = self.bot.get_channel(ID_CANAL_NOTICIAS)
@@ -166,7 +171,6 @@ class NoticiasGeek(commands.Cog):
             return
 
         try:
-            # Puxa o feed da IGN Brasil para servir de teste visual
             feed = feedparser.parse(FONTES_RSS["IGN Brasil"])
             if not feed.entries:
                 await interaction.followup.send("❌ Erro: O feed da IGN Brasil respondeu vazio no momento.", ephemeral=True)
@@ -176,7 +180,8 @@ class NoticiasGeek(commands.Cog):
             autor = noticia.get('author', 'IGN Brasil')
             titulo = noticia.title
             
-            resumo = noticia.get('summary', 'Clique no link para ler a matéria completa.').split('<')[0]
+            resumo_bruto = noticia.get('summary', noticia.get('description', 'Clique no link para ler a matéria completa.'))
+            resumo = resumo_bruto.split('<')[0].strip()
             if len(resumo) > 250:
                 resumo = resumo[:247] + "..."
 
@@ -185,8 +190,8 @@ class NoticiasGeek(commands.Cog):
                 title=f"🧪 [TESTE] {titulo}",
                 url=noticia.link,
                 description=resumo,
-                color=discord.Color.from_str("#FF4500"),
-                timestamp=datetime.datetime.now()
+                color=discord.Color.from_str("#FF4500"), # 🟠 Mantido o Laranja aqui no teste também
+                timestamp=datetime.datetime.now(UTC_MENOS_TRES)
             )
             embed.set_author(name=autor)
 
@@ -197,14 +202,12 @@ class NoticiasGeek(commands.Cog):
 
             embed.set_footer(text="Teste Manual • Via IGN Brasil")
 
-            # 💡 Como o teste usa o feed da IGN por padrão, definimos o texto fixo do teste aqui
             await canal.send(content="📰 **IGN Brasil**", embed=embed)
             await interaction.followup.send("✅ O embed de teste foi gerado e enviado com sucesso no canal de notícias!", ephemeral=True)
 
         except Exception as e:
             await interaction.followup.send(f"❌ Ocorreu um erro ao processar o feed: {e}", ephemeral=True)
 
-    # Trata de forma limpa a falta de permissões do comando de teste
     @testar_noticia.error
     async def testar_noticia_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.errors.MissingPermissions):
