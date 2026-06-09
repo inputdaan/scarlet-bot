@@ -39,8 +39,15 @@ class MyBot(commands.Bot):
             print("Cog de Notícias Geek carregada com sucesso!")
         except Exception as e:
             print(f"❌ Erro ao carregar a Cog de Notícias Geek: {e}")
+            
+        # 🔔 CARREGA O SISTEMA DE EVENTOS/SORTEIO (MENÇÃO FANTASMA)
+        try:
+            await self.load_extension('cogs.sorteio')
+            print("Cog de Evento de Sorteio carregada com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao carregar a Cog de Sorteio: {e}")
         
-        # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno e boas-vindas)
+        # Sincroniza todos os comandos com o Discord (incluindo os novos do chat noturno, boas-vindas e sorteio)
         try:
             synced = await self.tree.sync()
             print(f"🔄 Comandos Slash sincronizados globalmente! Total: {len(synced)} comandos.")
